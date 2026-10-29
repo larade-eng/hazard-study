@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hazard Identification Study</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#f5f6f7; --card:#ffffff; --ink:#1a1d21; --muted:#676e77; --line:#dbdfe4;
+  --accent:#1d5b86; --accent-soft:#e9f1f7; --accent-ink:#ffffff;
+  --flag-bg:#fdf8ed; --flag-line:#e9dcbe; --flag-ink:#7d5a12;
+  --ok-bg:#eaf4ec; --ok-line:#cbe3d1; --ok-ink:#2b6137;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--sans);margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 20px 64px}
+h1{font:600 25px/1.25 var(--serif);margin:0 0 8px}
+h2{font:600 17px/1.3 var(--serif);margin:0 0 10px}
+h3{font:600 11px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+p{margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px;margin-bottom:16px}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+.lede{font:400 16px/1.6 var(--sans);color:var(--muted);max-width:62ch;margin:0 0 18px}
+label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 5px}
+select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;
+  font:inherit;background:var(--card);color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+button{font:500 15px/1 var(--sans);padding:11px 18px;border-radius:6px;border:1px solid var(--accent);
+  background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button.small{padding:6px 11px;font-size:13px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.row{display:flex;gap:16px;align-items:flex-start}
+.row>*{min-width:0}
+.grow{flex:1}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:16px;background:var(--card);
+  border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:16px;position:sticky;top:0;z-index:5}
+.timer{font:500 24px/1 var(--mono);font-variant-numeric:tabular-nums}
+.timer.low{color:#b5333a}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+td.mono{font-family:var(--mono)}
+td textarea.cell{width:100%;border:1px solid transparent;background:var(--bg);padding:7px 8px;border-radius:6px;
+  font:inherit;color:var(--ink);resize:none;overflow:hidden;min-height:36px;line-height:1.45}
+td textarea.cell:focus{border-color:var(--accent);background:var(--card);outline:none}
+.scroll{overflow-x:auto}
+.tag{display:inline-block;font:500 11px/1.4 var(--sans);padding:2px 8px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+#panel{position:sticky;top:76px;max-height:calc(100vh - 100px);overflow-y:auto}
+.sugg{border:1px solid var(--line);border-radius:6px;padding:11px 12px;margin-bottom:8px;background:var(--card)}
+.sugg.used{background:var(--bg);color:var(--muted)}
+.locked{position:relative;min-height:200px}
+.locked .veil{position:absolute;inset:0;background:var(--card);border-radius:6px;display:flex;
+  align-items:center;justify-content:center;text-align:center;padding:24px;font-size:14px;color:var(--muted)}
+.scale{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.scale button{border-color:var(--line);background:transparent;color:var(--ink);min-width:46px;font-family:var(--mono)}
+.scale button.on{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.hide{display:none!important}
+ol.brief{margin:0 0 10px;padding-left:20px}
+ol.brief li{margin-bottom:3px}
+.flag{background:var(--flag-bg);border:1px solid var(--flag-line);border-radius:6px;padding:11px 13px;
+  font-size:13.5px;color:var(--flag-ink)}
+.ok{background:var(--ok-bg);border:1px solid var(--ok-line);border-radius:6px;padding:12px 14px;
+  font-size:14px;color:var(--ok-ink)}
+.consent{display:flex;gap:10px;align-items:flex-start;margin-top:18px;font-size:14px}
+.consent input{margin-top:3px;width:17px;height:17px;flex:none}
+pre.out{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;
+  font:500 11.5px/1.5 var(--mono);overflow:auto;white-space:pre-wrap;word-break:break-all;
+  margin:12px 0 0;max-height:200px}
+.foot{text-align:center;margin-top:26px;font-size:12px}
+.foot a{color:var(--muted)}
+@media(max-width:760px){.row{flex-direction:column}#panel{position:static;max-height:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ WELCOME ============ -->
+<section id="s-welcome">
+  <div class="card">
+    <h1>Hazard Identification Study</h1>
+    <p class="lede">A 15 minute task on how engineers identify ways a product can fail. Part of a graduate
+    research project at the University of Central Florida.</p>
+
+    <h3>What you will do</h3>
+    <p class="small">You will be shown a consumer medical device and asked to list the ways it can fail and
+    the effect of each failure. The task is timed at 15 minutes. Some participants are also shown a set of
+    AI generated suggestions during the task. Afterwards you answer four short questions.</p>
+
+    <h3 style="margin-top:20px">What is recorded</h3>
+    <p class="small">Your worksheet entries, the time you take, and your answers to the closing questions.
+    No name, email, or any other identifying information is collected, and nothing links your responses to
+    you. Results are reported in aggregate in a course paper. Participation is voluntary and you may close
+    the page at any point.</p>
+
+    <label class="consent" for="consent">
+      <input type="checkbox" id="consent">
+      <span>I am 18 or older and I agree to take part.</span>
+    </label>
+
+    <div class="btns"><button id="go-brief" disabled>Begin</button></div>
+  </div>
+  <div class="foot"><a href="#materials" id="matlink">Researcher view</a></div>
+</section>
+
+<!-- ============ BRIEF ============ -->
+<section id="s-brief" class="card hide">
+  <h2>Before you begin</h2>
+  <p class="small">The task starts when you press the button at the bottom of this page and runs for 15
+  minutes. Set aside the time before you start, since the timer does not pause.</p>
+
+  <h3 style="margin-top:22px">Device under analysis</h3>
+  <p><strong>Home automated blood pressure monitor.</strong> An over the counter device that adults use at
+  home to measure systolic and diastolic blood pressure and pulse on the upper arm.</p>
+  <ol class="brief small">
+    <li>Inflatable arm cuff, air tubing, electric air pump, pressure release valve.</li>
+    <li>Pressure sensor and microcontroller running an oscillometric measurement algorithm.</li>
+    <li>LCD display, four AA batteries.</li>
+    <li>Bluetooth module that syncs readings to a phone app holding up to two user profiles.</li>
+  </ol>
+  <p class="small">Used unsupervised at home with no clinician present. Users include older adults, some of
+  whom adjust their medication in response to readings. The phone app's own interface and the manufacturing
+  process are out of scope.</p>
+
+  <h3 style="margin-top:22px">Your task</h3>
+  <p class="small">List as many ways this device can fail as you can. For each one, give the effect on the
+  user. Work as you would on a design FMEA. There is no required number of entries.</p>
+  <div id="brief-cond" class="flag" style="margin-top:14px"></div>
+  <div class="btns"><button id="go-task">Start the 15 minute task</button></div>
+</section>
+
+<!-- ============ TASK ============ -->
+<section id="s-task" class="hide">
+  <div class="bar">
+    <div><div class="small" id="bar-hint"></div></div>
+    <div class="timer" id="timer">15:00</div>
+  </div>
+  <div class="row">
+    <div class="grow card" style="flex:1.45">
+      <h2>Failure mode worksheet</h2>
+      <div class="scroll">
+        <table id="sheet">
+          <thead><tr>
+            <th style="width:44%">Failure mode</th>
+            <th style="width:44%">Effect on the user</th>
+            <th style="width:12%"></th>
+          </tr></thead>
+          <tbody id="sheet-body"></tbody>
+        </table>
+      </div>
+      <div class="btns"><button class="ghost small" id="add-row">Add row</button></div>
+      <div id="submit-own" class="hide" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+        <p class="small">When you have finished your own list, submit it to continue. You will then see a set
+        of AI generated suggestions and may keep working.</p>
+        <button id="btn-submit-own">Submit my list</button>
+      </div>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+        <button class="ghost" id="finish-task">Finish and continue</button>
+      </div>
+    </div>
+    <div class="grow card" id="panel" style="flex:1">
+      <h2>AI generated suggestions</h2>
+      <p class="small muted">Suggested failure modes for this device. Add any that you consider applicable.</p>
+      <div id="sugg-list" class="locked">
+        <div class="veil">Suggestions become available after you submit your own list.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ POST TASK ============ -->
+<section id="s-post" class="card hide">
+  <h2>Four short questions</h2>
+
+  <label for="scale-conf">How confident are you that your worksheet captures the important ways this device
+  can fail?</label>
+  <div class="scale" id="scale-conf"></div>
+  <p class="small muted" style="margin-top:6px">1 = not at all confident, 7 = completely confident</p>
+
+  <label for="scale-cov" style="margin-top:20px">What share of the device's important failure modes do you
+  think you captured?</label>
+  <div class="scale" id="scale-cov"></div>
+  <p class="small muted" style="margin-top:6px">Percentage</p>
+
+  <label for="exp">Roughly how many years have you worked in engineering?</label>
+  <select id="exp">
+    <option value="">Select one</option>
+    <option>Less than 3</option>
+    <option>3 to 5</option>
+    <option>6 to 10</option>
+    <option>More than 10</option>
+  </select>
+
+  <label for="freq">How often do you work on FMEAs or similar risk analyses?</label>
+  <select id="freq">
+    <option value="">Select one</option>
+    <option>Never</option>
+    <option>A few times a year</option>
+    <option>Monthly</option>
+    <option>Weekly or more</option>
+  </select>
+
+  <label for="q1">How did you decide what to write down?</label>
+  <textarea id="q1"></textarea>
+
+  <label for="q2" id="q2-label">If you saw AI suggestions, how did you decide which ones to use?</label>
+  <textarea id="q2"></textarea>
+
+  <div class="btns">
+    <button id="finish-all">Submit my responses</button>
+    <span class="small muted" id="send-status"></span>
+  </div>
+</section>
+
+<!-- ============ DONE ============ -->
+<section id="s-done" class="card hide">
+  <h2>Thank you</h2>
+  <div id="done-ok" class="ok hide">Your responses have been received. Nothing else is needed. You can close
+  this page.</div>
+  <div id="done-fail" class="hide">
+    <div class="flag">Your responses could not be sent automatically, most likely because of a network
+    restriction. Copy the text below and email it to the researcher so the session is not lost.</div>
+    <div class="btns">
+      <button id="retry-send">Try sending again</button>
+      <button class="ghost" id="copy-out">Copy my results</button>
+      <span class="small muted" id="copy-status"></span>
+    </div>
+    <pre class="out" id="out"></pre>
+  </div>
+</section>
+
+<!-- ============ RESEARCHER MATERIALS ============ -->
+<section id="s-admin" class="hide">
+  <div class="card">
+    <h2>Study design</h2>
+    <p class="small muted">Researcher view. Participants do not see this page.</p>
+    <p class="small">Participants are randomly assigned to one of three conditions that differ only in when
+    the AI suggestion panel becomes available. The suggestion list is identical in wording, order, and
+    content across Conditions B and C, so timing is the only variable manipulated.</p>
+    <table style="margin-top:12px">
+      <tbody>
+        <tr><td class="mono" style="width:40px">A</td><td class="small">No AI support. Blank worksheet throughout.</td></tr>
+        <tr><td class="mono">B</td><td class="small">AI suggestions available from the start.</td></tr>
+        <tr><td class="mono">C</td><td class="small">AI suggestions locked until the participant submits an independent list, which is snapshotted before the panel unlocks.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Reference hazard set</h2>
+    <p class="small muted">Coding key, 28 valid failure modes. Each worksheet entry is scored against this list.</p>
+    <div id="ref-list" class="small"></div>
+  </div>
+  <div class="card">
+    <h2>Suggestion list shown to participants</h2>
+    <p class="small muted">Items marked non-applicable are the seeded errors, each a genuine failure mode of
+    a different device family. The label is internal and never appears in the participant's view.</p>
+    <div class="scroll" id="sugg-key"></div>
+  </div>
+  <div class="foot"><a href="#" id="backlink">Back to the study</a></div>
+</section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ */
+/*  Collection endpoint. Submissions arrive in the Formspree dashboard  */
+/*  and by email, and export as CSV.                                    */
+/* ------------------------------------------------------------------ */
+const ENDPOINT = "https://formspree.io/f/mkjjbepd";
+/* ------------------------------------------------------------------ */
+
+const TASK_SECONDS = 15 * 60;
+
+const CONDITIONS = {
+  none:    {code:"A", label:"No AI support"},
+  first:   {code:"B", label:"AI suggestions shown first"},
+  delayed: {code:"C", label:"AI suggestions after own list"}
+};
+
+/* Nine applicable suggestions plus three seeded non-applicable items. The seeded
+   items are genuine failure modes of other device families (sterile single use
+   devices, ECG electrodes, infusion pumps), which is the error pattern a language
+   model produces when it generalizes across a domain. */
+const SUGGESTIONS = [
+  {id:"g1", ok:true,  text:"Air pump motor fails and the cuff does not inflate."},
+  {id:"g2", ok:true,  text:"Pressure release valve sticks closed, the cuff does not deflate, and circulation in the arm is restricted."},
+  {id:"g3", ok:true,  text:"Pressure sensor drifts out of calibration and readings are inaccurate."},
+  {id:"n1", ok:false, text:"Sterile barrier packaging is breached and microbial ingress contaminates the device before first use."},
+  {id:"g4", ok:true,  text:"Air leak in the cuff bladder prevents the cuff from reaching target pressure."},
+  {id:"g5", ok:true,  text:"Batteries deplete during a measurement and the reading is lost."},
+  {id:"n2", ok:false, text:"Electrode gel dries out, raising skin impedance and distorting the signal."},
+  {id:"g6", ok:true,  text:"LCD segment failure makes a digit illegible and the reading is misread."},
+  {id:"g7", ok:true,  text:"Arm movement during measurement produces an inaccurate reading that is displayed with no warning."},
+  {id:"g8", ok:true,  text:"Bluetooth sync stores the reading under the wrong user profile."},
+  {id:"n3", ok:false, text:"Occlusion sensor fails to detect a blocked fluid line and the alarm is delayed."},
+  {id:"g9", ok:true,  text:"Cuff is the wrong size for the user's arm and every reading is biased."}
+];
+
+const REFERENCE_SET = {
+  "Cuff and pneumatics":["Pump fails, cuff does not inflate","Cuff over-inflates beyond safe pressure",
+    "Cuff fails to deflate, pressure is not released","Air leak in bladder or tubing, target pressure not reached",
+    "Tubing kinks or disconnects","Cuff size wrong for the user's arm",
+    "Cuff applied over clothing or positioned incorrectly","Fastener worn, cuff loosens during inflation"],
+  "Sensing and algorithm":["Pressure sensor drifts out of calibration","Algorithm misreads an irregular heartbeat",
+    "Motion artifact produces an erroneous reading","Reading displayed with no error flag despite poor signal quality"],
+  "Display and interface":["Display digits illegible or segments failed","Error code meaningless to a lay user",
+    "Units ambiguous or incorrect","Reading saved to the wrong user profile in device memory"],
+  "Power":["Batteries deplete mid-measurement","Low battery causes an inaccurate reading with no warning",
+    "Battery leakage or terminal corrosion"],
+  "Software and connectivity":["Sync sends the reading to the wrong account","Data lost when sync fails",
+    "Firmware update leaves the device inoperable"],
+  "Mechanical and materials":["Housing cracks and exposes a sharp edge","Cuff material causes skin irritation",
+    "Device fails after a drop"],
+  "Use and labeling":["Instructions unclear on posture or rest period, user measures incorrectly",
+    "User self-adjusts medication on a single erroneous reading","Device used outside its intended population"]
+};
+
+let S = null, timerId = null, remaining = TASK_SECONDS;
+const used = new Set();
+
+function makeId(){
+  const t = Date.now().toString(36).toUpperCase();
+  let r = "";
+  for(let i=0;i<4;i++) r += "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*32)];
+  return "P-" + t.slice(-5) + r;
+}
+
+function newSession(cond){
+  return {
+    participantId: makeId(), condition: cond, conditionCode: CONDITIONS[cond].code,
+    assignedAt: new Date().toISOString(), startedAt: null, ownListSubmittedAt: null,
+    finishedAt: null, endedReason: null, timeOnTaskSec: null, timeToOwnListSec: null,
+    ownListSnapshot: [], rows: [], confidence: null, estimatedCoverage: null,
+    yearsExperience: "", fmeaFrequency: "",
+    exitHowDecided: "", exitHowUsedSuggestions: "",
+    userAgent: navigator.userAgent, events: []
+  };
+}
+
+function log(type, detail){
+  if(!S) return;
+  S.events.push({
+    t:new Date().toISOString(),
+    elapsed: S.startedAt ? Math.round((Date.now() - new Date(S.startedAt))/1000) : 0,
+    type:type, detail: detail === undefined ? null : detail
+  });
+}
+
+const SCREENS = ["s-welcome","s-brief","s-task","s-post","s-done","s-admin"];
+function show(id){
+  SCREENS.forEach(s => document.getElementById(s).classList.toggle("hide", s !== id));
+  window.scrollTo(0,0);
+}
+
+function cell(value, placeholder, onChange){
+  const t = document.createElement("textarea");
+  t.className = "cell"; t.rows = 1; t.value = value; t.placeholder = placeholder;
+  const grow = () => { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; };
+  t.addEventListener("input", grow);
+  t.addEventListener("change", () => onChange(t.value.trim()));
+  t.addEventListener("keydown", e => { if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); t.blur(); } });
+  setTimeout(grow, 0);
+  return t;
+}
+
+function addRow(opts){
+  opts = opts || {};
+  S.rows.push({
+    id:"r" + (S.rows.length + 1), mode: opts.mode || "", effect: opts.effect || "",
+    source: opts.source || "self", suggestionId: opts.suggestionId || null,
+    addedAt:new Date().toISOString(),
+    addedElapsed: S.startedAt ? Math.round((Date.now() - new Date(S.startedAt))/1000) : 0,
+    afterOwnList: !!S.ownListSubmittedAt
+  });
+  renderSheet();
+}
+
+function renderSheet(){
+  const body = document.getElementById("sheet-body");
+  body.innerHTML = "";
+  S.rows.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    const td1 = document.createElement("td");
+    td1.appendChild(cell(r.mode, "Failure mode " + (i+1), v => { r.mode = v; log("edit_mode", {row:r.id, chars:v.length}); }));
+    const td2 = document.createElement("td");
+    td2.appendChild(cell(r.effect, "Effect", v => { r.effect = v; log("edit_effect", {row:r.id}); }));
+    const td3 = document.createElement("td");
+    if(r.source === "ai"){
+      const t = document.createElement("span");
+      t.className = "tag"; t.textContent = "from suggestion";
+      td3.appendChild(t);
+    }
+    tr.append(td1, td2, td3);
+    body.appendChild(tr);
+  });
+}
+
+function filledRows(){ return S.rows.filter(r => r.mode && r.mode.length > 1); }
+
+function renderSuggestions(unlocked){
+  const host = document.getElementById("sugg-list");
+  host.innerHTML = "";
+  if(!unlocked){
+    host.classList.add("locked");
+    const veil = document.createElement("div");
+    veil.className = "veil";
+    veil.textContent = "Suggestions become available after you submit your own list.";
+    host.appendChild(veil);
+    return;
+  }
+  host.classList.remove("locked");
+  SUGGESTIONS.forEach(sg => {
+    const d = document.createElement("div");
+    d.className = "sugg" + (used.has(sg.id) ? " used" : "");
+    const p = document.createElement("div");
+    p.className = "small"; p.textContent = sg.text;
+    d.appendChild(p);
+    if(!used.has(sg.id)){
+      const b = document.createElement("button");
+      b.className = "ghost small"; b.textContent = "Add to worksheet"; b.style.marginTop = "9px";
+      b.addEventListener("click", () => {
+        used.add(sg.id);
+        addRow({mode: sg.text, source:"ai", suggestionId: sg.id});
+        log("accept_suggestion", {id: sg.id, applicable: sg.ok});
+        renderSuggestions(true);
+      });
+      d.appendChild(b);
+    }else{
+      const s = document.createElement("div");
+      s.className = "small muted"; s.style.marginTop = "7px"; s.textContent = "Added";
+      d.appendChild(s);
+    }
+    host.appendChild(d);
+  });
+}
+
+function startTimer(){
+  remaining = TASK_SECONDS;
+  paintTimer();
+  timerId = setInterval(() => {
+    remaining--;
+    paintTimer();
+    if(remaining <= 0){ clearInterval(timerId); log("time_expired"); endTask("time_expired"); }
+  }, 1000);
+}
+function paintTimer(){
+  const m = Math.floor(remaining/60), s = remaining % 60;
+  const el = document.getElementById("timer");
+  el.textContent = m + ":" + String(s).padStart(2,"0");
+  el.classList.toggle("low", remaining <= 120);
+}
+
+document.getElementById("consent").addEventListener("change", e => {
+  document.getElementById("go-brief").disabled = !e.target.checked;
+});
+
+document.getElementById("go-brief").addEventListener("click", () => {
+  const keys = Object.keys(CONDITIONS);
+  const cond = keys[Math.floor(Math.random() * keys.length)];
+  S = newSession(cond);
+  used.clear();
+  log("session_assigned", {condition: cond});
+  const note = document.getElementById("brief-cond");
+  if(cond === "none") note.textContent = "You will work from a blank worksheet.";
+  else if(cond === "first") note.textContent = "A set of AI generated suggestions will be available beside the worksheet from the start.";
+  else note.textContent = "You will write your own list first. AI generated suggestions become available once you submit it.";
+  show("s-brief");
+});
+
+document.getElementById("go-task").addEventListener("click", () => {
+  S.startedAt = new Date().toISOString();
+  log("task_started");
+  const panel = document.getElementById("panel");
+  const submitOwn = document.getElementById("submit-own");
+  const hint = document.getElementById("bar-hint");
+
+  if(S.condition === "none"){
+    panel.classList.add("hide"); submitOwn.classList.add("hide");
+    hint.textContent = "List the ways this device can fail and the effect of each.";
+  }else if(S.condition === "first"){
+    panel.classList.remove("hide"); submitOwn.classList.add("hide");
+    renderSuggestions(true);
+    hint.textContent = "Suggestions are available beside the worksheet.";
+  }else{
+    panel.classList.remove("hide"); submitOwn.classList.remove("hide");
+    renderSuggestions(false);
+    hint.textContent = "Write your own list, then submit it to see the suggestions.";
+  }
+  S.rows = [];
+  for(let i=0;i<3;i++) addRow({});
+  show("s-task");
+  startTimer();
+});
+
+document.getElementById("add-row").addEventListener("click", () => { addRow({}); log("add_row_clicked"); });
+
+document.getElementById("btn-submit-own").addEventListener("click", () => {
+  S.ownListSubmittedAt = new Date().toISOString();
+  S.timeToOwnListSec = Math.round((Date.now() - new Date(S.startedAt))/1000);
+  S.ownListSnapshot = filledRows().map(r => ({mode:r.mode, effect:r.effect}));
+  log("own_list_submitted", {entries: S.ownListSnapshot.length, sec: S.timeToOwnListSec});
+  document.getElementById("submit-own").classList.add("hide");
+  document.getElementById("bar-hint").textContent =
+    "Suggestions are now available. You may keep editing until the time is up.";
+  renderSuggestions(true);
+});
+
+document.getElementById("finish-task").addEventListener("click", () => endTask("participant_finished"));
+
+function endTask(reason){
+  if(timerId) clearInterval(timerId);
+  S.timeOnTaskSec = Math.round((Date.now() - new Date(S.startedAt))/1000);
+  S.endedReason = reason;
+  log("task_ended", {reason: reason, entries: filledRows().length});
+  document.getElementById("q2-label").classList.toggle("hide", S.condition === "none");
+  document.getElementById("q2").classList.toggle("hide", S.condition === "none");
+  show("s-post");
+}
+
+function buildScale(hostId, values, onPick){
+  const host = document.getElementById(hostId);
+  host.innerHTML = "";
+  values.forEach(v => {
+    const b = document.createElement("button");
+    b.textContent = v;
+    b.addEventListener("click", () => {
+      [...host.children].forEach(c => c.classList.remove("on"));
+      b.classList.add("on");
+      onPick(v);
+    });
+    host.appendChild(b);
+  });
+}
+buildScale("scale-conf", [1,2,3,4,5,6,7], v => { S.confidence = v; log("confidence", v); });
+buildScale("scale-cov", [10,25,50,75,90,100], v => { S.estimatedCoverage = v; log("coverage_estimate", v); });
+
+function derive(s){
+  const rows = s.rows.filter(r => r.mode && r.mode.length > 1);
+  const ai = rows.filter(r => r.source === "ai");
+  const seeded = ai.filter(r => {
+    const sg = SUGGESTIONS.find(x => x.id === r.suggestionId);
+    return sg && !sg.ok;
+  });
+  return {
+    entriesTotal: rows.length,
+    entriesSelf: rows.length - ai.length,
+    entriesFromSuggestions: ai.length,
+    seededAccepted: seeded.length,
+    seededAcceptedIds: seeded.map(r => r.suggestionId),
+    applicableSuggestionsAccepted: ai.length - seeded.length,
+    ownListEntries: s.ownListSnapshot.length,
+    entriesAddedAfterOwnList: rows.filter(r => r.afterOwnList).length
+  };
+}
+
+/* One flat record per participant. The worksheet entries travel twice: as
+   readable text so a submission can be skimmed in the dashboard, and as JSON
+   so they can be split back into one row per entry for coding. */
+function payload(){
+  const rows = S.rows.filter(r => r.mode && r.mode.length > 1).map(r => {
+    const sg = r.suggestionId ? SUGGESTIONS.find(x => x.id === r.suggestionId) : null;
+    return {
+      mode:r.mode, effect:r.effect, source:r.source, suggestionId:r.suggestionId,
+      suggestionApplicable: sg ? sg.ok : null,
+      afterOwnList:r.afterOwnList, addedElapsed:r.addedElapsed
+    };
+  });
+  const d = derive(S);
+
+  const entriesText = rows.map((r, i) =>
+    (i+1) + ". " + r.mode +
+    (r.effect ? "\n   Effect: " + r.effect : "") +
+    "\n   Source: " + (r.source === "ai"
+      ? "suggestion " + r.suggestionId + (r.suggestionApplicable ? "" : " [NON-APPLICABLE]")
+      : "participant") +
+    (r.afterOwnList ? " | added after own list" : "") +
+    " | at " + r.addedElapsed + "s"
+  ).join("\n");
+
+  /* The per-keystroke edits are dropped so a submission stays small; their
+     count is kept as a measure of how much the worksheet was revised. */
+  const events = S.events.filter(e => e.type !== "edit_mode" && e.type !== "edit_effect");
+
+  return {
+    _subject: "Hazard study " + S.participantId + " (condition " + S.conditionCode + ")",
+    participant_id: S.participantId,
+    condition_code: S.conditionCode,
+    condition: S.condition,
+    entries_total: d.entriesTotal,
+    entries_self: d.entriesSelf,
+    entries_from_suggestions: d.entriesFromSuggestions,
+    seeded_accepted: d.seededAccepted,
+    seeded_accepted_ids: d.seededAcceptedIds.join(" "),
+    applicable_suggestions_accepted: d.applicableSuggestionsAccepted,
+    own_list_entries: d.ownListEntries,
+    entries_after_own_list: d.entriesAddedAfterOwnList,
+    confidence_1_7: S.confidence,
+    estimated_coverage_pct: S.estimatedCoverage,
+    time_on_task_sec: S.timeOnTaskSec,
+    time_to_own_list_sec: S.timeToOwnListSec,
+    ended_reason: S.endedReason,
+    years_experience: S.yearsExperience,
+    fmea_frequency: S.fmeaFrequency,
+    exit_how_decided: S.exitHowDecided,
+    exit_how_used_suggestions: S.exitHowUsedSuggestions,
+    started_at: S.startedAt,
+    finished_at: S.finishedAt,
+    edit_events: S.events.length - events.length,
+    entries_text: entriesText,
+    entries_json: JSON.stringify(rows),
+    events_json: JSON.stringify(events),
+    user_agent: S.userAgent
+  };
+}
+
+/* Posts the session to the collection endpoint and reads the confirmation. */
+async function send(body){
+  if(!ENDPOINT) throw new Error("no endpoint configured");
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "Accept": "application/json"},
+    body: body
+  });
+  if(!res.ok){
+    let detail = "";
+    try{
+      const j = await res.json();
+      detail = (j.errors || []).map(x => x.message).join("; ");
+    }catch(e){ /* no readable body */ }
+    throw new Error("endpoint returned " + res.status + (detail ? ": " + detail : ""));
+  }
+  return true;
+}
+
+let lastBody = "";
+
+document.getElementById("finish-all").addEventListener("click", async () => {
+  const btn = document.getElementById("finish-all");
+  const status = document.getElementById("send-status");
+  S.exitHowDecided = document.getElementById("q1").value.trim();
+  S.exitHowUsedSuggestions = document.getElementById("q2").value.trim();
+  S.yearsExperience = document.getElementById("exp").value;
+  S.fmeaFrequency = document.getElementById("freq").value;
+  S.finishedAt = new Date().toISOString();
+  lastBody = JSON.stringify(payload());
+
+  btn.disabled = true;
+  status.textContent = "Sending...";
+  try{
+    await send(lastBody);
+    show("s-done");
+    document.getElementById("done-ok").classList.remove("hide");
+  }catch(e){
+    show("s-done");
+    document.getElementById("done-fail").classList.remove("hide");
+    document.getElementById("out").textContent = lastBody;
+  }finally{
+    btn.disabled = false;
+    status.textContent = "";
+  }
+});
+
+document.getElementById("retry-send").addEventListener("click", async () => {
+  const btn = document.getElementById("retry-send");
+  btn.disabled = true; btn.textContent = "Sending...";
+  try{
+    await send(lastBody);
+    document.getElementById("done-fail").classList.add("hide");
+    document.getElementById("done-ok").classList.remove("hide");
+  }catch(e){
+    btn.textContent = "Still blocked, please copy instead";
+    setTimeout(() => { btn.textContent = "Try sending again"; btn.disabled = false; }, 2500);
+  }
+});
+
+document.getElementById("copy-out").addEventListener("click", () => {
+  const out = document.getElementById("out");
+  const st = document.getElementById("copy-status");
+  const done = ok => {
+    st.textContent = ok ? "Copied" : "Select the text and copy it";
+    setTimeout(() => { st.textContent = ""; }, 2500);
+  };
+  try{
+    navigator.clipboard.writeText(out.textContent).then(() => done(true), () => {
+      const r = document.createRange(); r.selectNodeContents(out);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      done(false);
+    });
+  }catch(e){ done(false); }
+});
+
+/* ---------------- researcher materials ---------------- */
+
+function renderMaterials(){
+  const ref = document.getElementById("ref-list");
+  if(ref.dataset.done) return;
+  ref.dataset.done = "1";
+  let n = 0;
+  Object.keys(REFERENCE_SET).forEach(group => {
+    const h = document.createElement("h3");
+    h.textContent = group; h.style.marginTop = "14px";
+    ref.appendChild(h);
+    const ol = document.createElement("ol");
+    ol.start = n + 1; ol.style.margin = "0"; ol.style.paddingLeft = "22px";
+    REFERENCE_SET[group].forEach(item => {
+      const li = document.createElement("li"); li.textContent = item; ol.appendChild(li); n++;
+    });
+    ref.appendChild(ol);
+  });
+
+  const key = document.getElementById("sugg-key");
+  const kt = document.createElement("table");
+  const kh = document.createElement("thead");
+  kh.innerHTML = "<tr><th>ID</th><th>Suggestion</th><th>Status</th></tr>";
+  kt.appendChild(kh);
+  const kb = document.createElement("tbody");
+  SUGGESTIONS.forEach(sg => {
+    const tr = document.createElement("tr");
+    const a = document.createElement("td"); a.className = "mono"; a.textContent = sg.id;
+    const b = document.createElement("td"); b.className = "small"; b.textContent = sg.text;
+    const c = document.createElement("td"); c.className = "small";
+    if(sg.ok) c.textContent = "applicable";
+    else { const st = document.createElement("strong"); st.textContent = "non-applicable (seeded)"; c.appendChild(st); }
+    tr.append(a,b,c);
+    kb.appendChild(tr);
+  });
+  kt.appendChild(kb); key.appendChild(kt);
+}
+
+function routeHash(){
+  if(location.hash === "#materials"){ renderMaterials(); show("s-admin"); }
+}
+window.addEventListener("hashchange", routeHash);
+document.getElementById("backlink").addEventListener("click", e => {
+  e.preventDefault();
+  history.replaceState(null, "", location.pathname + location.search);
+  show("s-welcome");
+});
+routeHash();
+</script>
+</body>
+</html>
